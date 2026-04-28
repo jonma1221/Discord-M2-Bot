@@ -1,31 +1,29 @@
 import os
-import json
 import asyncio
-import yt_dlp
 import discord
 import bot_commands
-
-from discord.ext import commands
-from typing import Any, Dict, List, Optional
-from guild_data import (
-    as_int_guild_id,
-    guild_members_data,
-    resolve_guild_for_id,
-    resolve_member_for_id,
-)
+import utils.discord_user_helper
 import gemini_ai_text_prompt
 import str_formatter
 
+from discord.ext import commands
+from typing import Any, Dict, List, Optional
+from guild_data_helper import (
+    as_int_guild_id,
+    getGuildMembers,
+    getGuild,
+    resolve_member_for_id,
+    printMembers
+)
+from yt_dl_helper import (
+    playYoutubeAudio
+)
+from dotenv import load_dotenv
 
-def _require_env(name: str) -> str:
-    value = os.getenv(name)
-    if not value:
-        raise RuntimeError(
-            f"Missing environment variable {name}. "
-            f"Set it before running, e.g. PowerShell: $env:{name}='YOUR_TOKEN_HERE'"
-        )
-    return value
+load_dotenv()
 
+discord_token = os.getenv("DISCORD_TOKEN")
+guild_id_raw = os.getenv("DISCORD_GUILD_ID")
 
 # This example requires the 'message_content' intent.
 intents = discord.Intents.default()
@@ -36,19 +34,9 @@ intents.members = True
 client = discord.Client(intents=intents)
 # bot = commands.Bot(command_prefix='$', intents=intents)
 botCommands = bot_commands.BotCommands(intents).bot
-
+discordUserHelper = utils.discord_user_helper.DiscordUserHelper(client)
+connectedGuilds = {}
 guild_member_data: Dict[int, Dict[str, Any]] = {}
-
-async def _dm_user(user_id: int, message: str) -> bool:
-    try:
-        user = client.get_user(user_id)
-        if user is None:
-            user = await client.fetch_user(user_id)
-        await user.send(message)
-        return True
-    except (discord.Forbidden, discord.NotFound, discord.HTTPException):
-        return False
-
 
 async def _scan_guild_and_nudge(guild: discord.Guild, *, skip_user_id: int) -> None:
     try:
@@ -81,9 +69,11 @@ async def _scan_guild_and_nudge(guild: discord.Guild, *, skip_user_id: int) -> N
                 entry["voice_channel_id"] = getattr(voice_channel, "id", None)
 
             if voice_channel is None:
-                dm_sent = await _dm_user(user_id, "Hop on, it's time to start!")
+                # dm_sent = await _dm_user(user_id, "Hop on, it's time to start!")
+                dm_sent = await discordUserHelper.dm_user(user_id, "Hop on, it's time to start!")
                 if dm_sent:
                     nudged += 1
+                    print(f"DM sent to {m['username']}")
                     # Cache DM channel id if we have it.
                     user_obj = client.get_user(user_id)
                     if user_obj is not None and getattr(user_obj, "dm_channel", None) is not None:
@@ -94,24 +84,16 @@ async def _scan_guild_and_nudge(guild: discord.Guild, *, skip_user_id: int) -> N
     except Exception as e:
         print(f"Nudge scan crashed for guild {guild.id}: {e!r}")
 
-
-def _print_cached_members(guild_id: int) -> None:
-    data = guild_member_data.get(guild_id)
-    if not data:
-        print(f"No cached members for guild_id={guild_id}.")
-        return
-
-    guild_meta = data.get("guild", {})
-    members = data.get("members", [])
-    print(f"=== Members for {guild_meta.get('name')} ({guild_meta.get('id')}) ===")
-    for m in members:
-        print(f"{m.get('id')}\t{m.get('display_name')}\t{m.get('username')}")
-
-
 @client.event
 async def on_ready():
     print(f"We have logged in as {client.user}")
-    guild_id_raw = os.getenv("DISCORD_GUILD_ID")
+    # Get the voice channel by ID
+    # channel = client.get_channel(1494790482763583591)  # Replace with your channel ID
+    # print(f"Get channel details: {channel}")
+    # voice_client = await channel.connect()
+    # print(f"Connected to voice channel: {voice_client}")
+    # playYoutubeAudio(voice_client)
+
     if not guild_id_raw:
         return
 
@@ -121,20 +103,22 @@ async def on_ready():
         print(f"Invalid DISCORD_GUILD_ID: {e}")
         return
 
-    guild = await resolve_guild_for_id(client, guild_id)
+    guild = await getGuild(client, guild_id)
+    print(f"Guild: {guild.members}")
     if guild is None:
         print("Could not access guild from DISCORD_GUILD_ID (not found or forbidden).")
         return
+    connectedGuilds[guild_id] = guild
 
     try:
-        data = await guild_members_data(guild)
+        data = await getGuildMembers(guild)
     except discord.Forbidden:
         print("Forbidden listing members: enable Server Members Intent and ensure bot access.")
         return
 
     guild_member_data[guild.id] = data
     print(f"Cached {data['member_count']} members for guild {guild.name} ({guild.id}).")
-    _print_cached_members(guild.id)
+    printMembers(guild.id, connectedGuilds)
 
 
 @client.event
@@ -205,6 +189,5 @@ async def on_voice_state_update(
             f"(user_id={member.id}, bot={member.bot}, roles={roles_count}, guild={after.channel.guild.name})"
         )
 
-
-client.run(_require_env("DISCORD_TOKEN"))
+client.run(discord_token)
 

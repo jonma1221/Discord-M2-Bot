@@ -21,6 +21,6 @@ async def execute_prompt(prompt):
 
 async def execute_prompt_async(prompt):
     response = await client.models.generate_content(
-        model="gemini-3-flash-preview", contents=f"Make sure to limit the character count to 2000 characters so the message can be sent to discord. Include youtube links if possible. Here is the prompt: {prompt}"
+        model="gemini-3-flash-preview", contents=f"Format the responses using Discord Markdown. Make sure to limit the character count to 2000 characters so the message can be sent to discord. Include youtube links if possible. Here is the prompt: {prompt}"
     )
     return response.text

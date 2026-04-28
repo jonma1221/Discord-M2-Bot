@@ -1,7 +1,5 @@
 from typing import Any, Dict, List, Optional, Tuple
-
 import discord
-
 
 def as_int_guild_id(raw: str) -> int:
     """Parse a guild (server) ID from user/env input.
@@ -20,8 +18,7 @@ def as_int_guild_id(raw: str) -> int:
         raise ValueError(f"guild_id must be a numeric ID, got: {raw!r}")
     return int(raw)
 
-
-async def resolve_guild_for_id(client: discord.Client, guild_id: int) -> Optional[discord.Guild]:
+async def getGuild(client: discord.Client, guild_id: int) -> Optional[discord.Guild]:
     """Resolve a `discord.Guild` by ID using cache first, then an API fetch.
 
     Notes:
@@ -44,8 +41,7 @@ async def resolve_guild_for_id(client: discord.Client, guild_id: int) -> Optiona
     except (discord.Forbidden, discord.NotFound):
         return None
 
-
-async def guild_members_data(guild: discord.Guild) -> Dict[str, Any]:
+async def getGuildMembers(guild: discord.Guild) -> Dict[str, Any]:
     """Fetch and normalize non-bot members for a guild into a plain Python dict.
 
     This uses `guild.fetch_members(...)`, so it requires:
@@ -65,7 +61,6 @@ async def guild_members_data(guild: discord.Guild) -> Dict[str, Any]:
     async for member in guild.fetch_members(limit=None):
         if member.bot:
             continue
-
         discriminator = getattr(member, "discriminator", "0")
         tag = member.name if discriminator in (None, "0") else f"{member.name}#{discriminator}"
         entry: Dict[str, Any] = {
@@ -85,7 +80,6 @@ async def guild_members_data(guild: discord.Guild) -> Dict[str, Any]:
         "members": members,
         "member_index": member_index,
     }
-
 
 async def resolve_member_for_id(
     guild: discord.Guild, user_id: int
@@ -119,7 +113,6 @@ async def resolve_member_for_id(
     except discord.HTTPException:
         return None, "http_exception"
 
-
 def voice_state_error(member: discord.Member) -> Optional[str]:
     """Check a member's voice state and return an error string on failure.
 
@@ -139,3 +132,13 @@ def voice_state_error(member: discord.Member) -> Optional[str]:
         return "not_in_voice"
     return None
 
+def printMembers(guild_id, connectedGuilds):
+    guild = connectedGuilds[guild_id]
+    if not guild:
+        print(f"No cached members for guild_id={guild_id}.")
+        return
+
+    members = guild.members
+    print(f"=== Members for {guild.name} ({guild.id}) ===")
+    for m in members:
+        print(f"{m.id}\t{m.display_name}\t{m.name}#{m.discriminator}")
