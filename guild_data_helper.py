@@ -101,6 +101,7 @@ async def resolve_member_for_id(
     """
     cached = guild.get_member(user_id)
     if cached is not None:
+        print(f"Returning cached member {cached.name}")
         return cached, None
 
     try:
@@ -141,4 +142,4 @@ def printMembers(guild_id, connectedGuilds):
     members = guild.members
     print(f"=== Members for {guild.name} ({guild.id}) ===")
     for m in members:
-        print(f"{m.id}\t{m.display_name}\t{m.name}#{m.discriminator}")
+        print(f"{m.id}\t{m.display_name}\t{m.name}")

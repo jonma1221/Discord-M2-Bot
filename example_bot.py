@@ -1,7 +1,6 @@
 import os
 import asyncio
 import discord
-import bot_commands
 import utils.discord_user_helper
 import gemini_ai_text_prompt
 import str_formatter
@@ -31,10 +30,9 @@ intents.message_content = True
 intents.voice_states = True
 intents.members = True
 
-client = discord.Client(intents=intents)
-# bot = commands.Bot(command_prefix='$', intents=intents)
-botCommands = bot_commands.BotCommands(intents).bot
-discordUserHelper = utils.discord_user_helper.DiscordUserHelper(client)
+bot = commands.Bot(command_prefix='$', intents=intents)
+
+discordUserHelper = utils.discord_user_helper.DiscordUserHelper(bot)
 connectedGuilds = {}
 guild_member_data: Dict[int, Dict[str, Any]] = {}
 
@@ -68,14 +66,13 @@ async def _scan_guild_and_nudge(guild: discord.Guild, *, skip_user_id: int) -> N
             if isinstance(entry, dict):
                 entry["voice_channel_id"] = getattr(voice_channel, "id", None)
 
-            if voice_channel is None:
-                # dm_sent = await _dm_user(user_id, "Hop on, it's time to start!")
+            if voice_channel:
                 dm_sent = await discordUserHelper.dm_user(user_id, "Hop on, it's time to start!")
                 if dm_sent:
                     nudged += 1
                     print(f"DM sent to {m['username']}")
                     # Cache DM channel id if we have it.
-                    user_obj = client.get_user(user_id)
+                    user_obj = bot.get_user(user_id)
                     if user_obj is not None and getattr(user_obj, "dm_channel", None) is not None:
                         if isinstance(entry, dict):
                             entry["dm_channel_id"] = user_obj.dm_channel.id
@@ -84,9 +81,9 @@ async def _scan_guild_and_nudge(guild: discord.Guild, *, skip_user_id: int) -> N
     except Exception as e:
         print(f"Nudge scan crashed for guild {guild.id}: {e!r}")
 
-@client.event
+@bot.event
 async def on_ready():
-    print(f"We have logged in as {client.user}")
+    print(f"We have logged in as {bot.user}")
     # Get the voice channel by ID
     # channel = client.get_channel(1494790482763583591)  # Replace with your channel ID
     # print(f"Get channel details: {channel}")
@@ -103,7 +100,7 @@ async def on_ready():
         print(f"Invalid DISCORD_GUILD_ID: {e}")
         return
 
-    guild = await getGuild(client, guild_id)
+    guild = await getGuild(bot, guild_id)
     print(f"Guild: {guild.members}")
     if guild is None:
         print("Could not access guild from DISCORD_GUILD_ID (not found or forbidden).")
@@ -120,10 +117,9 @@ async def on_ready():
     print(f"Cached {data['member_count']} members for guild {guild.name} ({guild.id}).")
     printMembers(guild.id, connectedGuilds)
 
-
-@client.event
+@bot.event
 async def on_message(message: discord.Message):
-    if message.author == client.user:
+    if message.author == bot.user:
         return
 
     if len(message.mentions) == 1 and message.mentions[0].bot:
@@ -137,8 +133,7 @@ async def on_message(message: discord.Message):
         for chunk in str_formatter.split_message(result):
             await message.reply(chunk)
 
-
-@client.event
+@bot.event
 async def on_voice_state_update(
     member: discord.Member, before: discord.VoiceState, after: discord.VoiceState
 ):
@@ -189,5 +184,5 @@ async def on_voice_state_update(
             f"(user_id={member.id}, bot={member.bot}, roles={roles_count}, guild={after.channel.guild.name})"
         )
 
-client.run(discord_token)
+bot.run(discord_token)
 
