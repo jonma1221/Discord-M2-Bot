@@ -15,6 +15,7 @@ class GeminiAIBot(commands.Cog):
             return
 
         if len(message.mentions) == 1 and message.mentions[0].bot:
+            await message.channel.typing()
             print("This message is directed at a bot")
             result = await gemini_ai_text_prompt.execute_prompt_async(message.content)
             print("result: ", result)

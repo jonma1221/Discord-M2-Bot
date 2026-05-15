@@ -2,11 +2,11 @@ import discord
 from discord.ext import commands
 
 class MediaControls(discord.ui.View):
-    def __init__(self, *, voice_client, timeout=180):
+    def __init__(self, *, voice_client, timeout=1800):
         super().__init__(timeout=timeout)
         self.voice_client = voice_client
 
-    @discord.ui.button(label="Pause",style=discord.ButtonStyle.green)
+    @discord.ui.button(label="Pause",style=discord.ButtonStyle.green, emoji="⏯️")
     async def playButton(self, interaction:discord.Interaction, button:discord.ui.Button):
         print(f"Button clicked ${button}")
         print(f"interaction ${interaction}")
@@ -26,13 +26,13 @@ class MediaControls(discord.ui.View):
             await interaction.response.edit_message(view=self)
             self.voice_client.resume()
         
-    @discord.ui.button(label="Stop",style=discord.ButtonStyle.red)
+    @discord.ui.button(label="Stop",style=discord.ButtonStyle.red, emoji="⏹️")
     async def stopButton(self, interaction:discord.Interaction, button:discord.ui.Button):
         print(f"Button clicked ${button}")
         print(f"Button label - {button.label}")
         await interaction.response.edit_message(view=self)
         self.voice_client.stop()
-        # await self.voice_client.disconnect()
+        await self.voice_client.disconnect()
     
     @discord.ui.select(
         placeholder="Volume",

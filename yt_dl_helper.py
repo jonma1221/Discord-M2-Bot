@@ -30,8 +30,10 @@ def playYoutubeAudio(voiceClient, URL = ''):
     return info
 
 async def fetchYoutubeInfo(URL = ''):
-    return await asyncio.get_event_loop().run_in_executor(None, lambda: ytdlp_extract_info(URL))
-    
+    # return await asyncio.get_event_loop().run_in_executor(None, lambda: ytdlp_extract_info(URL))
+    youtubeInfo = await asyncio.to_thread(ytdlp_extract_info, URL)
+    return youtubeInfo
+
 
 def ytdlp_extract_info(URL):
     URL = URL if URL else 'https://www.youtube.com/watch?v=Jdz5uMhu08c'
@@ -50,4 +52,5 @@ def ytdlp_extract_info(URL):
             print(f"Uploader: {info['uploader']}")
         print(f"URL: {info['url']}")
         print(f"Format: {info['format']}")
+        print(f"Thumbnail: {info['thumbnail']}")
     return info
