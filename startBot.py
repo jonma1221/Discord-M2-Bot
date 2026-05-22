@@ -56,8 +56,10 @@ async def on_ready():
 
     for filename in os.listdir('./cogs'):
         if filename.endswith('.py'):
-            await bot.load_extension(f'cogs.{filename[:-3]}')
-            print(filename)
+            ext = f'cogs.{filename[:-3]}'
+            if ext not in bot.extensions:
+                await bot.load_extension(ext)
+                print(filename)
     
     synced = await bot.tree.sync()
     print(f"{len(synced)} commands synced to the the servers!")
