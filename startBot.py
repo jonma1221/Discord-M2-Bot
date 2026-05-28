@@ -1,6 +1,10 @@
 import os
+import platform
 import asyncio
 import discord
+import discord.opus
+if platform.system() == 'Darwin' and not discord.opus.is_loaded():
+    discord.opus.load_opus('/opt/homebrew/lib/libopus.0.dylib')
 import utils.discord_user_helper
 
 from discord.ext import commands
@@ -55,7 +59,7 @@ async def on_ready():
     printMembers(guild.id, bot.connectedGuilds)
 
     for filename in os.listdir('./cogs'):
-        if filename.endswith('.py'):
+        if filename.endswith('.py') and filename != '__init__.py':
             ext = f'cogs.{filename[:-3]}'
             if ext not in bot.extensions:
                 await bot.load_extension(ext)
