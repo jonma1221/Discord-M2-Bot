@@ -1,7 +1,9 @@
+import os
+
 from google import genai
 import asyncio
 
-client = genai.Client(api_key="").aio
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY")).aio
 
 def get_youtube_guides(prompt) -> str:
     response = client.models.generate_content(

@@ -55,7 +55,7 @@ async def on_ready():
     printMembers(guild.id, bot.connectedGuilds)
 
     for filename in os.listdir('./cogs'):
-        if filename.endswith('.py'):
+        if filename.endswith('.py') and filename != '__init__.py':
             ext = f'cogs.{filename[:-3]}'
             if ext not in bot.extensions:
                 await bot.load_extension(ext)
