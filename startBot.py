@@ -1,6 +1,10 @@
 import os
+import platform
 import asyncio
 import discord
+import discord.opus
+if platform.system() == 'Darwin' and not discord.opus.is_loaded():
+    discord.opus.load_opus('/opt/homebrew/lib/libopus.0.dylib')
 import utils.discord_user_helper
 
 from discord.ext import commands
