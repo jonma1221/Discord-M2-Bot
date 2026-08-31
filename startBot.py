@@ -1,6 +1,7 @@
 import os
 import platform
 import asyncio
+import argparse
 import discord
 import discord.opus
 if platform.system() == 'Darwin' and not discord.opus.is_loaded():
@@ -19,6 +20,32 @@ from guild_data_helper import (
 from dotenv import load_dotenv
 
 load_dotenv()
+
+parser = argparse.ArgumentParser(description="Discord M2 Bot")
+parser.add_argument("--discord-token", help="Override DISCORD_TOKEN")
+parser.add_argument("--discord-guild-id", help="Override DISCORD_GUILD_ID")
+parser.add_argument("--steam-api-key", help="Override STEAM_API_KEY")
+parser.add_argument("--gemini-api-key", help="Override GEMINI_API_KEY")
+parser.add_argument("--env", action="append", metavar="KEY=VALUE",
+                    help="Set an arbitrary env var (repeatable)")
+args, _ = parser.parse_known_args()
+
+_cli_env_map = {
+    "discord_token": "DISCORD_TOKEN",
+    "discord_guild_id": "DISCORD_GUILD_ID",
+    "steam_api_key": "STEAM_API_KEY",
+    "gemini_api_key": "GEMINI_API_KEY",
+}
+for attr, env_key in _cli_env_map.items():
+    value = getattr(args, attr)
+    if value is not None:
+        os.environ[env_key] = value
+
+if args.env:
+    for pair in args.env:
+        key, _, value = pair.partition("=")
+        if key and value:
+            os.environ[key] = value
 
 discord_token = os.getenv("DISCORD_TOKEN")
 guild_id_raw = os.getenv("DISCORD_GUILD_ID")
