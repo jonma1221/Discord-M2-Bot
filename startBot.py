@@ -17,6 +17,7 @@ from guild_data_helper import (
     resolve_member_for_id,
     printMembers
 )
+from web import keep_alive
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -94,5 +95,8 @@ async def on_ready():
     
     synced = await bot.tree.sync()
     print(f"{len(synced)} commands synced to the the servers!")
+
+if os.getenv("IS_RENDER_ENV"):
+    keep_alive()
     
 bot.run(discord_token)
